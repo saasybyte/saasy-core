@@ -1,0 +1,39 @@
+# Git
+.git/
+.gitmodules
+.gitattributes
+.gitignore
+
+# Build artifacts
+.gradle/
+.kotlin/
+build/
+out/
+bin/
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+*.swp
+
+# Local/dev configs
+application-local.yml
+
+# Testing tools
+bruno/
+
+# AI tooling
+.claude/
+CLAUDE.md
+
+# Misc
+*.md
+Makefile
+scripts/

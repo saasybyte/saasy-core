@@ -1,0 +1,174 @@
+# CONVENTIONS:
+# - Use filename-friendly names in `summary` fields (lowercase, hyphens, no spaces)
+# - Bruno generates .bru filenames from summaries
+# - Example: `summary: generate-invite-codes` → `generate-invite-codes.bru`
+
+openapi: 3.1.0
+info:
+  title: saasy-core API
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+paths:
+  /invite-codes/generate:
+    post:
+      operationId: generateInviteCodes
+      summary: generate-invite-codes
+      tags:
+        - InviteCodes
+      security:
+        - adminKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRequest'
+      responses:
+        '200':
+          description: Codes generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateResponse'
+        '400':
+          description: Invalid request (count must be 1-100)
+        '401':
+          description: Unauthorized - invalid admin key
+
+  /invite-codes/claim:
+    post:
+      operationId: claimInviteCode
+      summary: claim-invite-code
+      tags:
+        - InviteCodes
+      security:
+        - adminKey: []
+      responses:
+        '200':
+          description: Code claimed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimResponse'
+        '401':
+          description: Unauthorized - invalid admin key
+        '404':
+          description: No unclaimed codes available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimResponse'
+
+  /invite-codes/validate:
+    post:
+      operationId: validateInviteCode
+      summary: validate-invite-code
+      tags:
+        - InviteCodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateRequest'
+      responses:
+        '200':
+          description: Code valid, JWT returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateResponse'
+        '403':
+          description: Code not issued or invalidated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateResponse'
+        '404':
+          description: Code not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateResponse'
+        '410':
+          description: Code window expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateResponse'
+        '402':
+          description: Usage budget exhausted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateResponse'
+
+components:
+  securitySchemes:
+    adminKey:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+
+  schemas:
+    GenerateRequest:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Number of codes to generate
+        usageBudgetSeconds:
+          type: integer
+          nullable: true
+          description: Optional custom usage budget in seconds
+
+    GenerateResponse:
+      type: object
+      required:
+        - codes
+      properties:
+        codes:
+          type: array
+          items:
+            type: string
+          description: List of generated invite codes
+
+    ClaimResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          nullable: true
+          description: The claimed invite code
+        error:
+          type: string
+          nullable: true
+          description: Error message if claim failed
+
+    ValidateRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: The invite code to validate
+
+    ValidateResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          nullable: true
+          description: JWT token if validation successful
+        error:
+          type: string
+          nullable: true
+          description: Error message if validation failed
